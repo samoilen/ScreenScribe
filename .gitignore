@@ -1,0 +1,29 @@
+# virtualenv
+scsc/
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PyInstaller artefakty
+build/
+dist/
+*.spec
+
+# Logi i lokalne configi
+logs/
+config/history.json
+config/settings.json
+
+# Tesseract (lokalny bundle - nie commitujemy binarek)
+tesseract_bundle/
+
+# IDE / system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
