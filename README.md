@@ -1,3 +1,5 @@
+![alt text](ScreenScribe.ico)
+
 # ScreenScribe
 
 Lekka aplikacja na Windows do wycinania fragmentu ekranu, OCR (Tesseract) i kopiowania tekstu do schowka. Działa z zasobami dołączonymi lokalnie (Tesseract w `tesseract_bundle`), pozwala zmieniać globalny skrót do przechwytywania i trzyma historię wyników.

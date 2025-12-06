@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import ctypes
+from datetime import datetime, timedelta
 from PySide6.QtWidgets import QApplication, QStyle, QMessageBox
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QSharedMemory
@@ -14,9 +15,21 @@ from app.core.hotkey import HotkeyManager
 from app.core.settings import load_settings
 
 
-def _setup_logging():
+def _cleanup_old_log(log_file: str, days: int = 7) -> None:
+    if not os.path.exists(log_file):
+        return
+    try:
+        mtime = datetime.fromtimestamp(os.path.getmtime(log_file))
+        if datetime.now() - mtime > timedelta(days=days):
+            os.remove(log_file)
+    except Exception:
+        # Jeśli czyszczenie się nie uda, pomijamy.
+        pass
+
+
+def _setup_logging(log_file: str | None = None):
     os.makedirs(LOGS_DIR, exist_ok=True)
-    log_file = os.path.join(LOGS_DIR, "screenscribe.log")
+    log_file = log_file or os.path.join(LOGS_DIR, "screenscribe.log")
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -50,7 +63,9 @@ class _SingleInstanceGuard:
 
 def main():
     ensure_runtime_dirs()
-    _setup_logging()
+    log_file = os.path.join(LOGS_DIR, "screenscribe.log")
+    _cleanup_old_log(log_file, days=7)
+    _setup_logging(log_file)
     logger = logging.getLogger("screenscribe.main")
 
     # Windows: ustaw AppUserModelID, aby ikony okien korzystały z własnej ikony zamiast python.exe
