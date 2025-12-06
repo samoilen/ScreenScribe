@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QGuiApplication
@@ -41,11 +42,18 @@ class HistoryWindow(QDialog):
         )
 
         self.history = history
+        self._filter_text: str = ""
 
         layout = QVBoxLayout(self)
 
         self.info_label = QLabel("Double-click an entry to copy it to clipboard.")
         layout.addWidget(self.info_label)
+
+        filter_layout = QHBoxLayout()
+        self.filter_edit = QLineEdit()
+        self.filter_edit.setPlaceholderText("Search history...")
+        filter_layout.addWidget(self.filter_edit)
+        layout.addLayout(filter_layout)
 
         self.list_widget = QListWidget()
         layout.addWidget(self.list_widget)
@@ -59,14 +67,18 @@ class HistoryWindow(QDialog):
         # sygnały
         self.list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
         self.btn_clear.clicked.connect(self.on_clear_clicked)
+        self.filter_edit.textChanged.connect(self.on_filter_changed)
 
         # początkowe odświeżenie
         self.refresh()
 
     def refresh(self):
-        """Przeładowuje listę wpisów z HistoryManagera."""
+        """Przeładowuje listę wpisów z HistoryManagera z filtrowaniem."""
         self.list_widget.clear()
         entries = self.history.get_entries()
+        if self._filter_text:
+            term = self._filter_text.lower()
+            entries = [e for e in entries if term in e.text.lower()]
         for entry in entries:
             # pokazujemy timestamp + skrócony początek tekstu
             preview = entry.text.replace("\n", " ")
@@ -93,4 +105,8 @@ class HistoryWindow(QDialog):
 
     def on_clear_clicked(self):
         self.history.clear()
+        self.refresh()
+
+    def on_filter_changed(self, text: str):
+        self._filter_text = text or ""
         self.refresh()
