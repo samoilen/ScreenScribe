@@ -22,17 +22,6 @@ Lekka aplikacja na Windows do wycinania fragmentu ekranu, OCR (Tesseract) i kopi
 - `last_capture.png` – ostatni zrzut.
 - `logs/screenscribe.log` – log aplikacji.
 
-## Budowa EXE (PyInstaller)
-W repo jest `ScreenScribe.spec` skonfigurowany na bundling zasobów:
-1. Zainstaluj PyInstaller: `pip install pyinstaller`.
-2. Uruchom w katalogu głównym: `pyinstaller ScreenScribe.spec`.
-3. Artefakty: `dist/ScreenScribe/ScreenScribe.exe` plus dołączone foldery `resources`, `tesseract_bundle`.
-
-## Dystrybucja dla innej osoby
-- Przekaż folder `dist/ScreenScribe` (całość razem z `resources` i `tesseract_bundle`). Nic nie trzeba doinstalowywać (Tesseract jest spakowany).
-- Uruchomienie: `ScreenScribe.exe`. Przy pierwszym starcie może poprosić o uprawnienia do rejestrowania globalnych skrótów (keyboard hook).
-- Wymagania: Windows 10/11 z uprawnieniami do hooków klawiatury; ekranowy overlay działa na aktywnym monitorze.
-
-## Znane wskazówki
-- Jeśli globalny skrót nie reaguje, sprawdź, czy nie koliduje z inną aplikacją i spróbuj innej kombinacji w Settings.
-- Przy problemach z OCR upewnij się, że `tesseract_bundle/tesseract.exe` istnieje w folderze obok EXE i że pliki językowe (`eng.traineddata`, `pol.traineddata`) są w `tesseract_bundle/tessdata`.
+## TO DO 
+- Konfiguracja wielkości schowku 
+- Zmiana formatu DataTime w History

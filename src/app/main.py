@@ -2,8 +2,9 @@ import sys
 import os
 import logging
 import ctypes
-from PySide6.QtWidgets import QApplication, QStyle
+from PySide6.QtWidgets import QApplication, QStyle, QMessageBox
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QSharedMemory
 
 from app.paths import ensure_runtime_dirs, APP_ICON, LOGS_DIR
 from app.gui.tray import ScreenScribeTray
@@ -28,6 +29,25 @@ def _setup_logging():
     logging.getLogger("pytesseract").setLevel(logging.INFO)
 
 
+class _SingleInstanceGuard:
+    def __init__(self, key: str):
+        self._mem = QSharedMemory(key)
+
+    def acquire(self) -> bool:
+        """
+        Returns True if this is the only instance. If another instance is running,
+        returns False.
+        """
+        if self._mem.attach():
+            # Already exists
+            return False
+        return self._mem.create(1)
+
+    def release(self) -> None:
+        if self._mem.isAttached():
+            self._mem.detach()
+
+
 def main():
     ensure_runtime_dirs()
     _setup_logging()
@@ -45,6 +65,12 @@ def main():
 
     app = QApplication(sys.argv)
     app.setApplicationName("ScreenScribe")
+
+    guard = _SingleInstanceGuard("ScreenScribeSingleton")
+    if not guard.acquire():
+        QMessageBox.warning(None, "ScreenScribe", "ScreenScribe is already running.")
+        logger.warning("ScreenScribe is already running. Exiting.")
+        return
 
     # KLUCZ: nie zamykaj całej aplikacji, gdy ostatnie okno zostanie zamknięte
     app.setQuitOnLastWindowClosed(False)
@@ -71,6 +97,7 @@ def main():
     # trzymamy referencję, żeby GC nie sprzątnął hotkey managera
     tray._hotkeys = hotkeys
 
+    app.aboutToQuit.connect(guard.release)
     sys.exit(app.exec())
 
 
