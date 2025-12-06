@@ -38,7 +38,7 @@ def get_bundle_dir() -> str:
     return get_base_dir()
 
 
-BASE_DIR = get_base_dir()  # tutaj trzymamy config, logi
+BASE_DIR = get_base_dir()  # tutaj trzymamy config, logi, last_capture
 BUNDLE_DIR = get_bundle_dir()  # tutaj szukamy zasobów spakowanych przez PyInstaller
 
 # Katalogi runtime
@@ -49,8 +49,10 @@ LOGS_DIR = os.path.join(BASE_DIR, "logs")
 APP_ICON = os.path.join(BUNDLE_DIR, "resources", "icons", "screenscribe.ico")
 TESSERACT_EXE = os.path.join(BUNDLE_DIR, "tesseract_bundle", "tesseract.exe")
 
-# Pliki konfiguracyjne
+# Pliki użytkownika
 HISTORY_FILE = os.path.join(CONFIG_DIR, "history.json")
+LAST_CAPTURE_FILE = os.path.join(BASE_DIR, "last_capture.png")
+SETTINGS_FILE = os.path.join(CONFIG_DIR, "settings.json")
 
 
 def ensure_runtime_dirs() -> None:

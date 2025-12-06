@@ -1,50 +1,74 @@
 from __future__ import annotations
 
-import keyboard
 from PySide6.QtCore import QObject, Signal
+import keyboard
 
 
-class HotkeyController(QObject):
+class HotkeyManager(QObject):
     """
-    Zarządza globalnym skrótem klawiaturowym przy użyciu biblioteki `keyboard`.
+    Prosty menedżer globalnych skrótów.
 
-    - combination: np. "ctrl+shift+s"
-    - trigger_capture: sygnał Qt emitowany z callbacka keyboard
-      (slot po stronie Qt uruchomi np. overlay.start_capture()).
+    Na razie obsługujemy tylko jeden skrót:
+    - capture: domyślnie 'ctrl+shift+s'
     """
 
-    trigger_capture = Signal()
+    capture_requested = Signal()
 
-    def __init__(self, combination: str = "ctrl+shift+s", parent=None):
+    def __init__(self, capture_hotkey: str = "ctrl+shift+s", parent=None):
         super().__init__(parent)
-        self._combination = combination
-        self._hotkey_id = None
-
-    @property
-    def combination(self) -> str:
-        return self._combination
+        self._capture_hotkey = capture_hotkey
+        self._registered = False
 
     def start(self):
-        """Rejestruje globalny skrót."""
-        if self._hotkey_id is not None:
+        """Rejestruje globalny skrót (jeśli jeszcze nie jest zarejestrowany)."""
+        if self._registered:
             return
 
-        def _callback():
-            # Uwaga: to wywołuje się w wątku keyboard.
-            # Emisja sygnału jest thread-safe – slot w Qt wykona się w wątku GUI.
-            print(f"[Hotkey] Hotkey pressed: {self._combination}")
-            self.trigger_capture.emit()
+        keyboard.add_hotkey(self._capture_hotkey, self._on_capture_hotkey)
+        self._registered = True
+        print(f"[Hotkey] Registered global hotkey for capture: {self._capture_hotkey}")
 
-        self._hotkey_id = keyboard.add_hotkey(self._combination, _callback)
-        print(f"[Hotkey] Registered global hotkey: {self._combination}")
+    def _on_capture_hotkey(self):
+        # Wywoływane w wątku keyboarda – sygnał Qt jest kolejkujący, więc OK.
+        print("[Hotkey] Capture hotkey pressed.")
+        self.capture_requested.emit()
 
     def stop(self):
-        """Wyrejestrowuje globalny skrót (np. przy zamykaniu aplikacji)."""
-        if self._hotkey_id is None:
+        """Wyrejestrowuje skrót (na wyjściu aplikacji)."""
+        if not self._registered:
             return
         try:
-            keyboard.remove_hotkey(self._hotkey_id)
-            print(f"[Hotkey] Unregistered global hotkey: {self._combination}")
-        except Exception as e:
-            print(f"[Hotkey] ERROR while unregistering hotkey: {e}")
-        self._hotkey_id = None
+            keyboard.clear_hotkey(self._capture_hotkey)
+        except KeyError:
+            # Jeśli z jakiegoś powodu nie ma już tego hotkeya – ignorujemy.
+            pass
+        self._registered = False
+        print("[Hotkey] Unregistered global hotkey.")
+
+    def set_hotkey(self, hotkey: str):
+        """Aktualizuje skrót i rejestruje ponownie, jeśli już działa."""
+        hotkey = hotkey.strip()
+        if not hotkey:
+            return
+        if hotkey == self._capture_hotkey:
+            return
+
+        was_registered = self._registered
+        if self._registered:
+            try:
+                keyboard.clear_hotkey(self._capture_hotkey)
+            except KeyError:
+                pass
+            self._registered = False
+            print(f"[Hotkey] Cleared previous hotkey: {self._capture_hotkey}")
+
+        self._capture_hotkey = hotkey
+
+        if was_registered:
+            keyboard.add_hotkey(self._capture_hotkey, self._on_capture_hotkey)
+            self._registered = True
+            print(f"[Hotkey] Registered new hotkey: {self._capture_hotkey}")
+
+    @property
+    def capture_hotkey(self) -> str:
+        return self._capture_hotkey

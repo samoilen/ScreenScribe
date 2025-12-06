@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import os
+import logging
 from typing import Optional
 
 import pytesseract
 from PIL import Image
 
 from app.paths import TESSERACT_EXE
+
+logger = logging.getLogger("screenscribe.ocr")
 
 _initialized = False
 
@@ -23,12 +26,12 @@ def init_tesseract():
         return
 
     if not os.path.exists(TESSERACT_EXE):
-        print(f"[OCR] ERROR: tesseract.exe not found at {TESSERACT_EXE}")
+        logger.error("tesseract.exe not found at %s", TESSERACT_EXE)
         return
 
     pytesseract.pytesseract.tesseract_cmd = TESSERACT_EXE
     _initialized = True
-    print(f"[OCR] Using tesseract at: {TESSERACT_EXE}")
+    logger.info("Using tesseract at: %s", TESSERACT_EXE)
 
 
 def image_file_to_text(path: str, lang: str = "eng+pol") -> Optional[str]:
@@ -39,25 +42,22 @@ def image_file_to_text(path: str, lang: str = "eng+pol") -> Optional[str]:
     init_tesseract()
 
     if not os.path.exists(path):
-        print(f"[OCR] ERROR: image file not found: {path}")
+        logger.error("Image file not found: %s", path)
         return None
 
     try:
         img = Image.open(path)
     except Exception as e:
-        print(f"[OCR] ERROR: failed to open image: {e}")
+        logger.exception("Failed to open image: %s", e)
         return None
 
     try:
         text = pytesseract.image_to_string(img, lang=lang)
     except Exception as e:
-        print(f"[OCR] ERROR: tesseract error: {e}")
+        logger.exception("Tesseract error: %s", e)
         return None
 
     cleaned = text.strip()
-    print("[OCR] RAW TEXT:")
-    print(text)
-    print("[OCR] CLEANED:")
-    print(cleaned)
+    logger.info("OCR raw length=%d cleaned length=%d", len(text), len(cleaned))
 
     return cleaned or None

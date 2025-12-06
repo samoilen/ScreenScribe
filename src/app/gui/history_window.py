@@ -10,7 +10,9 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QGuiApplication
 
+from app.paths import APP_ICON
 from app.core.history import HistoryManager
 
 
@@ -30,6 +32,10 @@ class HistoryWindow(QDialog):
         # Okno z przyciskiem minimalizacji i zamknięcia
         self.setWindowTitle("ScreenScribe - History")
         self.resize(600, 400)
+        icon = QIcon(APP_ICON)
+        if icon.isNull():
+            icon = QGuiApplication.windowIcon()
+        self.setWindowIcon(icon)
         self.setWindowFlags(
             Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint
         )
