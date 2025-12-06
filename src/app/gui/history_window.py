@@ -38,7 +38,10 @@ class HistoryWindow(QDialog):
             icon = QGuiApplication.windowIcon()
         self.setWindowIcon(icon)
         self.setWindowFlags(
-            Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint
+            Qt.Window
+            | Qt.WindowMinimizeButtonHint
+            | Qt.WindowCloseButtonHint
+            | Qt.WindowMaximizeButtonHint
         )
 
         self.history = history
@@ -79,12 +82,12 @@ class HistoryWindow(QDialog):
         if self._filter_text:
             term = self._filter_text.lower()
             entries = [e for e in entries if term in e.text.lower()]
-        for entry in entries:
-            # pokazujemy timestamp + skrócony początek tekstu
+        for idx, entry in enumerate(entries, start=1):
+            # pokazujemy numer + skrócony początek tekstu
             preview = entry.text.replace("\n", " ")
             if len(preview) > 100:
                 preview = preview[:100] + "..."
-            item = QListWidgetItem(f"[{entry.timestamp}]  {preview}")
+            item = QListWidgetItem(f"[{idx}]  {preview}")
             # pełny tekst w data
             item.setData(Qt.UserRole, entry.text)
             self.list_widget.addItem(item)
