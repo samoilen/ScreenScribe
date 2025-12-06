@@ -1,4 +1,4 @@
-![alt text](ScreenScribe.ico)
+![alt text](ScreenScribe-1.ico)
 
 # ScreenScribe
 
