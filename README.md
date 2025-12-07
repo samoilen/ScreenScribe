@@ -1,30 +1,57 @@
-![alt text](ScreenScribe-1.ico)
-
 # ScreenScribe
+![alt text](ScreenScribe-2.ico)
 
-Lekka aplikacja na Windows do wycinania fragmentu ekranu, OCR (Tesseract) i kopiowania tekstu do schowka. Działa z zasobami dołączonymi lokalnie (Tesseract w `tesseract_bundle`), pozwala zmieniać globalny skrót do przechwytywania i trzyma historię wyników.
+Lightweight Windows tray app to grab a screen region, run OCR (bundled Tesseract), and copy the result to the clipboard with a searchable history and configurable global hotkeys.
 
-## Uruchomienie w dev
-1. Wymagania: Python 3.11+, środowisko virtualenv.
-2. `pip install -r requirements.txt` (pakiety: PySide6, pillow, pytesseract, keyboard).
-3. `python -m app.main` z katalogu `src/`.
-4. Ikona w zasobniku systemowym → menu:
-   - `Capture text now` – zaznacz prostokąt, wynik trafia do schowka i historii.
-   - `History...` – lista poprzednich wyników, podwójne kliknięcie kopiuje do schowka.
-   - `Settings...` – zmiana globalnego skrótu (domyślnie `ctrl+shift+s`), zapis w `config/settings.json`.
-   - `Exit` – wyjście.
+## Features
+- Global hotkeys (defaults): capture `ctrl+shift+s`, history `ctrl+shift+h` (configurable in Settings).
+- Region selection overlay with per-monitor capture and OCR (English+Polish trained data bundled).
+- Clipboard copy and history list (double-click to copy); search box; entries numbered newest-first.
+- Settings stored locally (`config/settings.json`); single-instance guard; auto-rotating log (7 days).
+- Bundled Tesseract (`tesseract_bundle`) and resources; no external installs required for end users.
 
-## Zmiana skrótu
-- Tray → `Settings...` → wpisz np. `ctrl+alt+c` lub `print screen` → `Save`.
-- Nowy skrót działa natychmiast i zapisuje się w `config/settings.json`.
+## Quick Start (dev)
+1) Requirements: Python 3.11+, virtualenv.  
+2) Install deps: `pip install -r requirements.txt` (includes PySide6, pillow, pytesseract, keyboard).  
+3) Run from repo root: `python -m app.main` (cwd `src/`).  
+4) Use tray menu:
+   - `Capture text now` – draw a rectangle, text goes to clipboard/history.
+   - `History...` – view/search previous results; double-click copies.
+   - `Settings...` – change global hotkeys.
+   - `Exit` – quit.
 
-## Pliki runtime
-- `config/history.json` – historia OCR.
-- `config/settings.json` – ustawienia skrótu.
-- `last_capture.png` – ostatni zrzut.
-- `logs/screenscribe.log` – log aplikacji.
+## Hotkeys
+- Capture: default `ctrl+shift+s`.
+- History: default `ctrl+shift+h`.
+- Change via tray → `Settings...`. Saved to `config/settings.json`; applied immediately.
 
-## TO DO 
-- Konfiguracja wielkości schowku 
-- Zmiana formatu DataTime w History
-- dodanie aplikacji do autostart 
+## Runtime Files
+- `config/history.json` – latest entries (capped at 50).
+- `config/settings.json` – hotkeys.
+- `last_capture.png` – overwritten with the last screenshot.
+- `logs/screenscribe.log` – rotates by age (7 days; recreated on next start).
+
+## Single Instance
+The app uses a shared-memory guard; if already running, a warning is shown and the second instance exits.
+
+## Build (PyInstaller)
+Spec file: `ScreenScribe.spec` (includes resources and tesseract bundle).
+Steps:
+1) `pip install pyinstaller`.
+2) `pyinstaller ScreenScribe.spec`
+3) Output: `dist/ScreenScribe/ScreenScribe.exe` plus `resources/` and `tesseract_bundle/`.
+
+## Distributing to another user
+- Zip the whole `dist/ScreenScribe` folder and share.  
+- The user unzips and runs `ScreenScribe.exe`; no Python/pip needed.  
+- First run may prompt for permission to register a global hotkey (keyboard hook).
+
+## Project Layout (key paths)
+- `src/app/main.py` – entrypoint, single-instance guard, logging, wiring.
+- `src/app/gui/` – tray, overlay, history window, settings dialog.
+- `src/app/core/` – capture, OCR, history storage, hotkeys, settings.
+- `resources/` – icons; `tesseract_bundle/` – Tesseract exe + data.
+
+## Known Tips
+- If a hotkey conflicts, pick a different combo in Settings.
+- If OCR fails, verify `tesseract_bundle/tesseract.exe` and language files are present next to the EXE.
