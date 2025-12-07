@@ -11,7 +11,9 @@ __pycache__/
 
 # PyInstaller artefakty
 build/
-dist/
+# ignorujemy zawartość dist, ale pozwalamy na paczki .7z
+dist/*
+!dist/*.7z
 *.spec
 
 # Logi i lokalne configi
