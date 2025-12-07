@@ -79,8 +79,9 @@ class ScreenScribeTray(QSystemTrayIcon):
 
         self.setContextMenu(menu)
 
-        # Signal from the overlay when user finishes selection
+        # Sygnały
         self.overlay.selection_made.connect(self.on_selection_made)
+        self.hotkeys.history_requested.connect(self.on_history_clicked)
 
     @Slot()
     def on_capture_clicked(self):
@@ -105,15 +106,26 @@ class ScreenScribeTray(QSystemTrayIcon):
 
     @Slot()
     def on_settings_clicked(self):
-        dlg = SettingsDialog(self.hotkeys.capture_hotkey, parent=None)
+        dlg = SettingsDialog(
+            self.hotkeys.capture_hotkey, self.hotkeys.history_hotkey, parent=None
+        )
         if dlg.exec() == QDialog.Accepted:
-            new_hotkey = dlg.get_result() or self.hotkeys.capture_hotkey
-            if new_hotkey != self.hotkeys.capture_hotkey:
-                self.logger.info("Updating hotkey to %s", new_hotkey)
-                self.hotkeys.set_hotkey(new_hotkey)
-                self.settings.capture_hotkey = new_hotkey
+            new_capture = dlg.get_capture_result() or self.hotkeys.capture_hotkey
+            new_history = dlg.get_history_result() or self.hotkeys.history_hotkey
+            changed = False
+            if new_capture != self.hotkeys.capture_hotkey:
+                self.logger.info("Updating capture hotkey to %s", new_capture)
+                self.hotkeys.set_capture_hotkey(new_capture)
+                self.settings.capture_hotkey = new_capture
+                changed = True
+            if new_history != self.hotkeys.history_hotkey:
+                self.logger.info("Updating history hotkey to %s", new_history)
+                self.hotkeys.set_history_hotkey(new_history)
+                self.settings.history_hotkey = new_history
+                changed = True
+            if changed:
                 save_settings(self.settings)
-                self.logger.info("Hotkey updated and saved.")
+                self.logger.info("Hotkeys updated and saved.")
 
     @Slot(object)
     def on_selection_made(self, rect):

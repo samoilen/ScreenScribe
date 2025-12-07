@@ -27,3 +27,4 @@ Lekka aplikacja na Windows do wycinania fragmentu ekranu, OCR (Tesseract) i kopi
 ## TO DO 
 - Konfiguracja wielkości schowku 
 - Zmiana formatu DataTime w History
+- dodanie aplikacji do autostart 

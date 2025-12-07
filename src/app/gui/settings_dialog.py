@@ -12,7 +12,7 @@ from PySide6.QtCore import Qt
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, current_hotkey: str, parent=None):
+    def __init__(self, current_capture: str, current_history: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle("ScreenScribe - Settings")
         self.setWindowFlags(
@@ -20,18 +20,28 @@ class SettingsDialog(QDialog):
         )
         self.resize(400, 160)
 
-        self._result_hotkey: str | None = None
+        self._result_capture: str | None = None
+        self._result_history: str | None = None
 
         layout = QVBoxLayout(self)
 
         info = QLabel(
-            "Capture hotkey (example: ctrl+shift+s, ctrl+alt+c, print screen)\n"
+            "Set global shortcuts. Examples: ctrl+shift+s, ctrl+alt+h, print screen.\n"
             "Changes apply immediately after saving."
         )
         layout.addWidget(info)
 
-        self.hotkey_edit = QLineEdit(current_hotkey)
-        layout.addWidget(self.hotkey_edit)
+        self.capture_label = QLabel("Capture hotkey:")
+        self.capture_edit = QLineEdit(current_capture)
+        self.capture_edit.setPlaceholderText("Capture hotkey (e.g. ctrl+shift+s)")
+        layout.addWidget(self.capture_label)
+        layout.addWidget(self.capture_edit)
+
+        self.history_label = QLabel("History hotkey:")
+        self.history_edit = QLineEdit(current_history)
+        self.history_edit.setPlaceholderText("History hotkey (e.g. ctrl+shift+h)")
+        layout.addWidget(self.history_label)
+        layout.addWidget(self.history_edit)
 
         btns = QHBoxLayout()
         self.btn_save = QPushButton("Save")
@@ -45,8 +55,12 @@ class SettingsDialog(QDialog):
         self.btn_cancel.clicked.connect(self.reject)
 
     def accept(self):
-        self._result_hotkey = self.hotkey_edit.text().strip()
+        self._result_capture = self.capture_edit.text().strip()
+        self._result_history = self.history_edit.text().strip()
         super().accept()
 
-    def get_result(self) -> str | None:
-        return self._result_hotkey
+    def get_capture_result(self) -> str | None:
+        return self._result_capture
+
+    def get_history_result(self) -> str | None:
+        return self._result_history

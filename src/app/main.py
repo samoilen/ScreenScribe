@@ -98,10 +98,17 @@ def main():
     history_manager = HistoryManager(max_entries=50)
     settings = load_settings()
     overlay = SelectionOverlay()
-    hotkeys = HotkeyManager(capture_hotkey=settings.capture_hotkey)
+    hotkeys = HotkeyManager(
+        capture_hotkey=settings.capture_hotkey,
+        history_hotkey=settings.history_hotkey,
+    )
     tray = ScreenScribeTray(app, overlay, history_manager, settings, hotkeys)
     tray.show()
-    logger.info("ScreenScribe started with hotkey=%s", settings.capture_hotkey)
+    logger.info(
+        "ScreenScribe started with hotkeys capture=%s history=%s",
+        settings.capture_hotkey,
+        settings.history_hotkey,
+    )
 
     # --- NOWE: globalny skrót klawiaturowy do "Capture text now" ---
     # UWAGA: jeśli metoda nazywa się inaczej niż capture_text_now,
