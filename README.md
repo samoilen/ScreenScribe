@@ -55,3 +55,7 @@ Steps:
 ## Known Tips
 - If a hotkey conflicts, pick a different combo in Settings.
 - If OCR fails, verify `tesseract_bundle/tesseract.exe` and language files are present next to the EXE.
+
+
+## To do
+- wyłączenie aplikacji po 11 zaznaczeniach pustej prstrzeni 
