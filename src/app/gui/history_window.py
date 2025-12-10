@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QGuiApplication
+from PySide6.QtGui import QIcon, QGuiApplication, QKeySequence, QShortcut
 
 from app.paths import APP_ICON
 from app.core.history import HistoryManager
@@ -49,7 +49,7 @@ class HistoryWindow(QDialog):
 
         layout = QVBoxLayout(self)
 
-        self.info_label = QLabel("Double-click an entry to copy it to clipboard.")
+        self.info_label = QLabel("CTRL + C to copy it to clipboard.")
         layout.addWidget(self.info_label)
 
         filter_layout = QHBoxLayout()
@@ -59,6 +59,8 @@ class HistoryWindow(QDialog):
         layout.addLayout(filter_layout)
 
         self.list_widget = QListWidget()
+        self.list_widget.setWordWrap(True)
+        self.list_widget.setTextElideMode(Qt.ElideNone)
         layout.addWidget(self.list_widget)
 
         buttons_layout = QHBoxLayout()
@@ -71,6 +73,8 @@ class HistoryWindow(QDialog):
         self.list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
         self.btn_clear.clicked.connect(self.on_clear_clicked)
         self.filter_edit.textChanged.connect(self.on_filter_changed)
+        self.copy_shortcut = QShortcut(QKeySequence.Copy, self)
+        self.copy_shortcut.activated.connect(self.copy_selected_to_clipboard)
 
         # początkowe odświeżenie
         self.refresh()
@@ -83,10 +87,8 @@ class HistoryWindow(QDialog):
             term = self._filter_text.lower()
             entries = [e for e in entries if term in e.text.lower()]
         for idx, entry in enumerate(entries, start=1):
-            # pokazujemy numer + skrócony początek tekstu
+            # pokazujemy numer + pełny tekst (zawija się w widoku)
             preview = entry.text.replace("\n", " ")
-            if len(preview) > 100:
-                preview = preview[:100] + "..."
             item = QListWidgetItem(f"[{idx}]  {preview}")
             # pełny tekst w data
             item.setData(Qt.UserRole, entry.text)
@@ -103,7 +105,7 @@ class HistoryWindow(QDialog):
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(text)
         print(
-            f"[HistoryWindow] Copied {len(text)} characters to clipboard from history."
+            f"[HistoryWindow] Copied {len(text)} characters to clipboard from history."  # coś nie działa
         )
 
     def on_clear_clicked(self):
@@ -113,3 +115,16 @@ class HistoryWindow(QDialog):
     def on_filter_changed(self, text: str):
         self._filter_text = text or ""
         self.refresh()
+
+    def copy_selected_to_clipboard(self):
+        item = self.list_widget.currentItem()
+        if not item:
+            return
+        text = item.data(Qt.UserRole)
+        if not text:
+            return
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText(text)
+        print(
+            f"[HistoryWindow] Copied {len(text)} characters to clipboard via shortcut."
+        )
