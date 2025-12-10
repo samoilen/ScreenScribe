@@ -70,6 +70,7 @@ class SelectionOverlay(QWidget):
         self.show()
         self.raise_()
         self.activateWindow()
+        self.setCursor(Qt.CrossCursor)
         logger.info("Overlay shown/raised/activated.")
 
     # --- Obsługa wejścia ---
@@ -129,6 +130,7 @@ class SelectionOverlay(QWidget):
             self.selection_made.emit(global_rect)
 
             self.hide()
+            self.unsetCursor()
             logger.info("Overlay hidden after selection.")
         else:
             super().mouseReleaseEvent(event)
@@ -166,3 +168,4 @@ class SelectionOverlay(QWidget):
         self._current_pos = None
         self._selection_rect = QRect()
         self.hide()
+        self.unsetCursor()
