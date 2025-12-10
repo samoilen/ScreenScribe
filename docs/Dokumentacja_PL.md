@@ -1,55 +1,56 @@
-# ScreenScribe – Dokumentacja szczegółowa (PL)
+# ScreenScribe – Dokumentacja szczegolowa (PL)
 
 ## Opis
-ScreenScribe to aplikacja tray na Windows, która pozwala zaznaczyć fragment ekranu, wykonać OCR, skopiować wynik do schowka oraz przeglądać/wyszukiwać historię rozpoznanego tekstu. Tesseract i zasoby są dołączone, więc użytkownik końcowy nie musi nic instalować. Aplikacja wymusza pojedynczą instancję.
+ScreenScribe to aplikacja tray na Windows, ktora pozwala zaznaczyc fragment ekranu, wykryc kody kreskowe/QR offline (zxing-cpp), wykonac OCR (Tesseract), skopiowac wynik do schowka oraz przegladac/wyszukiwac historie tekstow. Tesseract i zasoby sa dolaczone, aplikacja wymusza pojedyncza instancje.
 
 ## Architektura
-- Wejście: `src/app/main.py` – logowanie, strażnik pojedynczej instancji, QApplication, tray, hotkeys.
+- Wejscie: `src/app/main.py` – logowanie, straznik pojedynczej instancji, QApplication, tray, hotkeys.
 - GUI:
-  - `gui/tray.py` – menu traya, przebieg capture, wątek OCR, ustawienia/hotkeys, wywołanie historii.
-  - `gui/overlay.py` – pełnoekranowy overlay do zaznaczania (per monitor).
-  - `gui/history_window.py` – historia z wyszukiwaniem, numeracją, double-click kopiującym, przyciskiem Clear.
-  - `gui/settings_dialog.py` – edycja skrótów capture/history.
+  - `gui/tray.py` – menu traya, przebieg capture, watek OCR/barcode, ustawienia/hotkeys, wywolanie historii.
+  - `gui/overlay.py` – pelnoekranowy overlay do zaznaczania (per monitor).
+  - `gui/history_window.py` – historia z wyszukiwaniem, numeracja, kopiowanie (double-click/Ctrl+C), przycisk Clear.
+  - `gui/settings_dialog.py` – edycja skrotow capture/history oraz opcji barcode.
 - Core:
   - `core/capture.py` – zrzut ekranu per monitor, zapis do `last_capture.png`.
-  - `core/ocr.py` – inicjalizacja dołączonego Tesseracta, OCR.
-  - `core/history.py` – lista w pamięci + zapis/odczyt JSON, limit wpisów.
-  - `core/hotkey.py` – globalne skróty (capture/history) przez `keyboard`.
-  - `core/settings.py` – odczyt/zapis ustawień.
-- Ścieżki/zasoby: `app/paths.py` wylicza katalogi bazowe/bundle, ścieżki do ikon, config i logów. `resources/` zawiera ikonę; `tesseract_bundle/` zawiera Tesseract i dane językowe.
-- Pakowanie: `ScreenScribe.spec` dla PyInstaller, dodaje zasoby i bundle Tesseract.
+  - `core/ocr.py` – pipeline barcode-first (zxing-cpp) z fallbackiem OCR (Tesseract).
+  - `core/barcode.py` – wrapper zxing-cpp i dataclass z wynikiem.
+  - `core/history.py` – lista w pamieci + zapis/odczyt JSON, limit wpisow.
+  - `core/hotkey.py` – globalne skroty (capture/history) przez `keyboard`.
+  - `core/settings.py` – odczyt/zapis ustawien.
+- Sciezki/zasoby: `app/paths.py` wylicza katalogi bazowe/bundle, sciezki do ikon, config i logow. `resources/` zawiera ikone; `tesseract_bundle/` zawiera Tesseract i dane jezykowe.
+- Pakowanie: `ScreenScribe.spec` dla PyInstaller; dodaje zasoby, bundle Tesseract, hiddenimports dla `keyboard` i `zxingcpp`.
 
-## Zachowanie w czasie działania
-- Skróty: capture (domyślnie `ctrl+shift+s`), history (domyślnie `ctrl+shift+h`), konfigurowalne w Settings; zapis w `config/settings.json`.
-  - `history_requested` otwiera okno historii, `capture_requested` startuje overlay.
-- Capture: zaznaczenie → zapis do `last_capture.png` (per monitor) → OCR w wątku → schowek → wpis do historii.
-- Historia: `config/history.json`, max 50 wpisów; UI numeruje wpisy (1 = najnowszy), wyszukiwanie substring, case-insensitive; double-click kopiuje tekst.
-- Logowanie: `logs/screenscribe.log` + stdout; log kasowany, gdy starszy niż 7 dni, przy starcie tworzony na nowo.
-- Pojedyncza instancja: strażnik shared-memory blokuje drugie uruchomienie i pokazuje ostrzeżenie.
+## Zachowanie w czasie dzialania
+- Skroty: capture (domyslnie `ctrl+shift+s`), history (domyslnie `ctrl+shift+h`), konfigurowalne w Settings; zapis w `config/settings.json`.
+- Barcode pipeline: przy ustawieniu `prefer_barcodes` najpierw zxing-cpp, jesli znajdzie kody, zwraca linie `[FORMAT] tekst`; jesli nie ma kodow, fallback do OCR. Tryb `ocr_only` pomija barcode.
+- Capture: zaznaczenie -> zapis do `last_capture.png` -> barcode/OCR w watku -> schowek -> wpis do historii.
+- Historia: `config/history.json`, max 50 wpisow; numeracja (1 = najnowszy), szukanie substring, pelny tekst zawijany; double-click lub Ctrl+C kopiuje.
+- Logowanie: `logs/screenscribe.log` + stdout; log kasowany, gdy starszy niz 7 dni, przy starcie tworzony na nowo.
+- Pojedyncza instancja: straznik shared-memory blokuje drugie uruchomienie i pokazuje ostrzezenie.
 
-## Pliki i trwałość
-- `config/settings.json` – skróty capture/history.
-  - Minimalna struktura: `{"capture_hotkey": "...", "history_hotkey": "..."}`.
-- `config/history.json` – wpisy OCR (timestamp + text), przycięte do limitu.
+## Pliki i trwalosc
+- `config/settings.json` – skroty capture/history i ustawienia barcode (enabled, mode).
+- `config/history.json` – wpisy (timestamp + text), przyciete do limitu.
 - `last_capture.png` – nadpisywany ostatni zrzut.
-- `logs/screenscribe.log` – kasowany po 7 dniach (wiek), potem tworzony od nowa.
+- `logs/screenscribe.log` – czyszczony po 7 dniach.
 
-## Zarządzanie skrótami
-- Dwa globalne skróty rejestrowane przez `HotkeyManager` (biblioteka `keyboard`).
-- Ustawienia w dialogu `Settings...`; zapis do JSON, zmiany działają natychmiast.
-- Skróty wywołują: capture -> overlay/ocr; history -> okno historii.
+## Zarzadzanie skrotami
+- Dwa globalne skroty rejestrowane przez `HotkeyManager` (biblioteka `keyboard`).
+- Settings aktualizuje skroty i barcode; zmiany dzialaja od razu, zapis do JSON.
+- `history_requested` otwiera okno historii; `capture_requested` startuje overlay.
 
 ## Budowa i dystrybucja
-- Budowa: `pyinstaller ScreenScribe.spec` (pakuje zasoby i Tesseract).
+- Budowa: `pyinstaller ScreenScribe.spec` (pakuje zasoby, Tesseract, hiddenimports).
 - Wynik: `dist/ScreenScribe/ScreenScribe.exe` z katalogami `resources/` i `tesseract_bundle/`.
-- Dystrybucja: spakuj cały `dist/ScreenScribe` do zip; użytkownik rozpakowuje i uruchamia `ScreenScribe.exe` (bez Python/pip). Windows może pytać o pozwolenie na globalne skróty (hook klawiatury).
+- Dystrybucja: spakuj caly `dist/ScreenScribe` do zip; uzytkownik rozpakowuje i uruchamia `ScreenScribe.exe` (bez Python/pip). Windows moze pytac o pozwolenie na globalne skroty (hook klawiatury).
 
-## Wskazówki
-- Kolizja skrótów: ustaw inną kombinację w Settings.
-- Problemy z OCR: sprawdź obecność `tesseract_bundle/tesseract.exe` i plików językowych w `tesseract_bundle/tessdata`.
-- Historia: szukanie po fragmencie tekstu, numeracja dla oszczędzenia miejsca.
-- Zużycie miejsca: tylko jeden `last_capture.png`; log czyści się po 7 dniach.
+## Wskazowki
+- Kolizja skrotow: ustaw inna kombinacje w Settings.
+- Problemy z OCR: sprawdz `tesseract_bundle/tesseract.exe` i pliki jezykowe w `tesseract_bundle/tessdata`.
+- Barcode: dziala offline; tekst traktowany zwykle (brak wykonywania).
+- Historia: wyszukiwanie po fragmencie, numeracja dla oszczedzenia miejsca.
+- Zuzycie miejsca: jeden `last_capture.png`; log czyszczony po 7 dniach.
 
-## Uwagi na przyszłość
-- Autostart można dodać wpisem w HKCU Run lub przez skrót w Autostarcie.
-- Możliwa rotacja logu także po rozmiarze, jeśli będzie potrzebne.
+## Uwagi na przyszlosc
+- Autostart mozna dodac wpisem w HKCU Run lub przez skrot w Autostarcie.
+- Mozliwa rotacja logu po rozmiarze, jesli bedzie potrzebne.

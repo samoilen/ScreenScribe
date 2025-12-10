@@ -8,7 +8,7 @@ from app.gui.overlay import SelectionOverlay
 from app.gui.history_window import HistoryWindow
 from app.gui.settings_dialog import SettingsDialog
 from app.core.capture import capture_region
-from app.core.ocr import image_file_to_text
+from app.core.ocr import extract_text_from_file
 from app.core.history import HistoryManager
 from app.core.hotkey import HotkeyManager
 from app.core.settings import Settings, save_settings
@@ -18,22 +18,23 @@ class _OcrWorker(QObject):
     finished = Signal(str)
     failed = Signal(str)
 
-    def __init__(self, path: str, lang: str = "eng+pol"):
+    def __init__(self, path: str, settings: Settings, lang: str = "eng+pol"):
         super().__init__()
         self.path = path
         self.lang = lang
+        self.settings = settings
         self.logger = logging.getLogger("screenscribe.ocrworker")
 
     @Slot()
     def run(self):
-        self.logger.info("OCR start on %s", self.path)
-        text = image_file_to_text(self.path, lang=self.lang)
+        self.logger.info("OCR/Barcode start on %s", self.path)
+        text = extract_text_from_file(self.path, settings=self.settings, lang=self.lang)
         if not text:
-            self.logger.warning("OCR returned empty text.")
+            self.logger.warning("OCR/Barcode returned empty text.")
             self.failed.emit("ocr_empty")
             return
 
-        self.logger.info("OCR finished, length=%d", len(text))
+        self.logger.info("OCR/Barcode finished, length=%d", len(text))
         self.finished.emit(text)
 
 
@@ -107,11 +108,17 @@ class ScreenScribeTray(QSystemTrayIcon):
     @Slot()
     def on_settings_clicked(self):
         dlg = SettingsDialog(
-            self.hotkeys.capture_hotkey, self.hotkeys.history_hotkey, parent=None
+            self.hotkeys.capture_hotkey,
+            self.hotkeys.history_hotkey,
+            self.settings.barcode_enabled,
+            self.settings.barcode_mode,
+            parent=None,
         )
         if dlg.exec() == QDialog.Accepted:
             new_capture = dlg.get_capture_result() or self.hotkeys.capture_hotkey
             new_history = dlg.get_history_result() or self.hotkeys.history_hotkey
+            new_barcode_enabled = dlg.get_barcode_enabled()
+            new_barcode_mode = dlg.get_barcode_mode() or self.settings.barcode_mode
             changed = False
             if new_capture != self.hotkeys.capture_hotkey:
                 self.logger.info("Updating capture hotkey to %s", new_capture)
@@ -123,9 +130,17 @@ class ScreenScribeTray(QSystemTrayIcon):
                 self.hotkeys.set_history_hotkey(new_history)
                 self.settings.history_hotkey = new_history
                 changed = True
+            if new_barcode_enabled is not None and new_barcode_enabled != self.settings.barcode_enabled:
+                self.logger.info("Updating barcode_enabled to %s", new_barcode_enabled)
+                self.settings.barcode_enabled = new_barcode_enabled
+                changed = True
+            if new_barcode_mode != self.settings.barcode_mode:
+                self.logger.info("Updating barcode_mode to %s", new_barcode_mode)
+                self.settings.barcode_mode = new_barcode_mode
+                changed = True
             if changed:
                 save_settings(self.settings)
-                self.logger.info("Hotkeys updated and saved.")
+                self.logger.info("Settings updated and saved.")
 
     @Slot(object)
     def on_selection_made(self, rect):
@@ -156,7 +171,7 @@ class ScreenScribeTray(QSystemTrayIcon):
             return
         self.logger.info("Capture saved to %s", path)
 
-        worker = _OcrWorker(path, lang="eng+pol")
+        worker = _OcrWorker(path, settings=self.settings, lang="eng+pol")
         thread = QThread()
         self._capture_thread = thread
         self._ocr_worker = worker

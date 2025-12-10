@@ -14,6 +14,8 @@ logger = logging.getLogger("screenscribe.settings")
 class Settings:
     capture_hotkey: str = "ctrl+shift+s"
     history_hotkey: str = "ctrl+shift+h"
+    barcode_enabled: bool = True
+    barcode_mode: str = "prefer_barcodes"  # prefer_barcodes | ocr_only
 
 
 def load_settings() -> Settings:
@@ -31,12 +33,23 @@ def load_settings() -> Settings:
     defaults = Settings()
     capture_hotkey = raw.get("capture_hotkey") or defaults.capture_hotkey
     history_hotkey = raw.get("history_hotkey") or defaults.history_hotkey
+    barcode_enabled = raw.get("barcode_enabled")
+    if barcode_enabled is None:
+        barcode_enabled = defaults.barcode_enabled
+    barcode_mode = raw.get("barcode_mode") or defaults.barcode_mode
     logger.info(
-        "Loaded settings; capture_hotkey=%s history_hotkey=%s",
+        "Loaded settings; capture_hotkey=%s history_hotkey=%s barcode_enabled=%s barcode_mode=%s",
         capture_hotkey,
         history_hotkey,
+        barcode_enabled,
+        barcode_mode,
     )
-    return Settings(capture_hotkey=capture_hotkey, history_hotkey=history_hotkey)
+    return Settings(
+        capture_hotkey=capture_hotkey,
+        history_hotkey=history_hotkey,
+        barcode_enabled=bool(barcode_enabled),
+        barcode_mode=barcode_mode,
+    )
 
 
 def save_settings(settings: Settings) -> None:
@@ -44,8 +57,10 @@ def save_settings(settings: Settings) -> None:
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(asdict(settings), f, ensure_ascii=False, indent=2)
     logger.info(
-        "Saved settings to %s (capture_hotkey=%s, history_hotkey=%s)",
+        "Saved settings to %s (capture_hotkey=%s, history_hotkey=%s, barcode_enabled=%s, barcode_mode=%s)",
         SETTINGS_FILE,
         settings.capture_hotkey,
         settings.history_hotkey,
+        settings.barcode_enabled,
+        settings.barcode_mode,
     )
