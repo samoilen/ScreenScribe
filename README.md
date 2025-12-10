@@ -61,3 +61,4 @@ Steps:
 - If a hotkey conflicts, pick another combo in Settings.
 - If OCR fails, verify `tesseract_bundle/tesseract.exe` and language files are present next to the EXE.
 - Barcode detection is offline; no external API calls. Text from OCR/barcodes is treated as plain text only.
+- QR_CODE, DATA_MATRIX, AZTEC, PDF_417, EAN_13, EAN_8, UPC_A, CODE_39, CODE_128, ITF
