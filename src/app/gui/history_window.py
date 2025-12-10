@@ -105,7 +105,7 @@ class HistoryWindow(QDialog):
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(text)
         print(
-            f"[HistoryWindow] Copied {len(text)} characters to clipboard from history."  # coś nie działa
+            f"[HistoryWindow] Copied {len(text)} characters to clipboard from history."  # do stdout
         )
 
     def on_clear_clicked(self):
