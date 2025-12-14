@@ -1,5 +1,5 @@
 # ScreenScribe
-![alt text](ScreenScribe-3.ico)
+![alt text](ScreenScribe-1.ico)
 Lightweight Windows tray app to grab a screen region, run OCR (bundled Tesseract), detect barcodes/QR offline (zxing-cpp), and copy the result to the clipboard with a searchable history and configurable global hotkeys.
 
 ## Features

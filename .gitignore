@@ -20,6 +20,7 @@ dist/*
 logs/
 config/history.json
 config/settings.json
+last_capture.png
 
 # Tesseract (lokalny bundle - nie commitujemy binarek)
 tesseract_bundle/
